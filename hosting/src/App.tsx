@@ -1,43 +1,128 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Box from '@material-ui/core/Box';
-import yarns from 'yarns.json';
+import yarnsJson from 'yarns.json';
 import SelectableChip from './components/SelectableChip';
-import { Paper } from '@material-ui/core';
+import Typography from '@material-ui/core/Typography';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
+import Avatar from '@material-ui/core/Avatar';
+import ListItemAvatar from '@material-ui/core/ListItemAvatar';
+
+type YarnWeight =
+  | 'Lace'
+  | 'Light Fingering'
+  | 'Fingering'
+  | 'Sport'
+  | 'DK'
+  | 'Worsted'
+  | 'Aran'
+  | 'Bulky'
+  | 'Super Bulky';
+
+interface YarnData {
+  discontinued: boolean;
+  gauge_divisor: number;
+  grams: number;
+  machine_washable?: boolean;
+  max_gauge: number;
+  min_gauge: number;
+  name: string;
+  rating_average: number;
+  rating_count: number;
+  rating_total: number;
+  texture: string;
+  thread_size?: number;
+  yardage: number;
+  min_needle_size?: {
+    metric: string;
+  };
+  max_needle_size?: {
+    metric: string;
+  };
+  yarn_weight: {
+    name: YarnWeight;
+    wpi: number;
+    min_gauge?: number;
+    max_gauge?: number;
+  };
+  yarn_company: {
+    name: string;
+  };
+  photos?: {
+    medium2_url: string;
+  }[];
+  yarn_fibers: {
+    fiber_category: {
+      name: string;
+      synthetic: boolean;
+      vegetable_fiber: boolean;
+      animal_fiber: boolean;
+    };
+    fiber_type: {
+      name: string;
+    };
+    percentage: number;
+  }[];
+}
+
+interface Yarn {
+  link: string;
+  data: YarnData;
+}
 
 export default function App() {
-  const [selectedWeight, setSelectedWeight] = useState<string>('Aran');
+  const [selectedWeight, setSelectedWeight] = useState<YarnWeight>('Aran');
 
-  const handleWeightClick = () => {};
+  const handleWeightClick = (weight: YarnWeight) => () => {
+    setSelectedWeight(weight);
+  };
+
+  const handleYarnClick = (link: string) => () => {
+    window.location.assign(link);
+  };
+
+  const yarns = yarnsJson[selectedWeight] as Yarn[];
 
   return (
     <Box height="100vh">
-      <Box p="16px" display="flex" flexWrap="wrap">
-        {[
-          'Thread',
-          'Cobweb',
-          'Lace',
-          'Light Fingering',
-          'Fingering',
-          'Sport',
-          'DK',
-          'Worsted',
-          'Aran',
-          'Bulky',
-          'Super Bulky',
-          'Jumbo',
-        ].map(weight => (
-          <Box mr="8px" mb="8px">
-            <SelectableChip key={weight} label={weight} onClick={handleWeightClick} />
-          </Box>
-        ))}
+      <Box p="8px" display="flex" flexWrap="wrap">
+        {['Lace', 'Light Fingering', 'Fingering', 'Sport', 'DK', 'Worsted', 'Aran', 'Bulky', 'Super Bulky'].map(
+          weight => (
+            <Box mr="8px" mb="8px">
+              <SelectableChip key={weight} label={weight} onClick={handleWeightClick(weight as YarnWeight)} />
+            </Box>
+          ),
+        )}
       </Box>
-      <Box p="16px">
-        {yarns.Aran.map(yarn => (
-          <Paper>
-            <Box height="100px">{yarn.name}</Box>
-          </Paper>
+      <List>
+        {yarns.map(yarn => (
+          <ListItem key={yarn.link} onClick={handleYarnClick(yarn.link)} button>
+            <ListItemAvatar>
+              <Avatar src={yarn.data.photos?.[0]?.medium2_url} />
+            </ListItemAvatar>
+            <ListItemText
+              primary={`${yarn.data.name} (${yarn.data.yarn_company.name})`}
+              secondary={
+                <>
+                  <Typography>
+                    {yarn.data.yarn_fibers.map(fiber => `${fiber.percentage}% ${fiber.fiber_type.name}`).join(', ')}
+                  </Typography>
+                  <Typography>Length: {Math.round(yarn.data.yardage / 1.094)}m</Typography>
+                  <Typography>
+                    Needle size: {yarn.data.min_needle_size?.metric}
+                    {yarn.data.max_needle_size?.metric ? `-${yarn.data.max_needle_size.metric}mm` : 'mm'}
+                  </Typography>
+                  <Typography>
+                    Gauge: {yarn.data.min_gauge}
+                    {yarn.data.max_gauge ? `-${yarn.data.max_gauge}` : ''}
+                  </Typography>
+                </>
+              }
+            />
+          </ListItem>
         ))}
-      </Box>
+      </List>
     </Box>
   );
 }

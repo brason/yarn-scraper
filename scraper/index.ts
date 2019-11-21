@@ -7,33 +7,13 @@ const rav = Ravelry.basic({
   ravPersonalKey: "uSDs5Fn1XHG7VlS/KbYUN/va7iZJdtlsasfAEd1w"
 });
 
-interface Yarn {
-  name: string;
-  description: string;
-  imageURL: string;
-  link: string;
-}
-
 (async () => {
   const browser = await puppeteer.launch({
     headless: true
   });
   const page = await browser.newPage();
 
-  const yarns: { [weight: string]: Yarn[] } = {
-    Thread: [],
-    Cobweb: [],
-    Lace: [],
-    "Light Fingering": [],
-    Fingering: [],
-    Sport: [],
-    DK: [],
-    Worsted: [],
-    Aran: [],
-    Bulky: [],
-    "Super Bulky": [],
-    Jumbo: []
-  };
+  const yarns: { [weight: string]: any[] } = {};
 
   for (const p of [1, 2, 3]) {
     console.log(`Fetching page: ${p}`);
@@ -47,29 +27,22 @@ interface Yarn {
     for (const link of yarnLinks) {
       await page.goto(link);
 
-      const [name, description] = await page.evaluate(() => {
-        return [".product-name > .h1", ".short-description > .std"].map(
-          s => document.querySelector(s)?.textContent
-        );
+      const name = await page.evaluate(() => {
+        return document.querySelector(".product-name > .h1")?.textContent
       });
 
-      const imageURL = await page.evaluate(() => {
-        return document.querySelector("#image-main")?.getAttribute("src");
-      });
-
-      const {
-        yarns: [yarn]
-      } = await rav.yarns.search({
+      const res = await rav.yarns.search({
         query: name
       });
 
-      if (yarn && name && description && imageURL) {
-        yarns[yarn.yarn_weight.name].push({
-          name,
-          description,
-          imageURL,
-          link
-        });
+      if (res.yarns.length > 0) {
+        const {yarn} = await rav.yarns.show(res.yarns[0].id);
+
+        if (!(yarn.yarn_weight.name in yarns)) {
+          yarns[yarn.yarn_weight.name] = [];
+        }
+
+        yarns[yarn.yarn_weight.name].push({link, data: yarn});
       }
     }
   }
