@@ -8,6 +8,7 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Avatar from '@material-ui/core/Avatar';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
+import { useHistory, useParams } from 'react-router';
 
 type YarnWeight =
   | 'Lace'
@@ -42,6 +43,7 @@ interface YarnData {
   };
   yarn_weight: {
     name: YarnWeight;
+    ply: string;
     wpi: number;
     min_gauge?: number;
     max_gauge?: number;
@@ -72,25 +74,33 @@ interface Yarn {
 }
 
 export default function App() {
-  const [selectedWeight, setSelectedWeight] = useState<YarnWeight>('Aran');
+  const history = useHistory();
+  const params = useParams<{ yarn: string }>();
+
+  const yarnWeight = params.yarn ? (decodeURIComponent(params.yarn) as YarnWeight) : 'Lace';
 
   const handleWeightClick = (weight: YarnWeight) => () => {
-    setSelectedWeight(weight);
+    history.push(`/${encodeURIComponent(weight)}`);
   };
 
   const handleYarnClick = (link: string) => () => {
     window.location.assign(link);
   };
 
-  const yarns = yarnsJson[selectedWeight] as Yarn[];
+  const yarns = yarnsJson[yarnWeight] as Yarn[];
 
   return (
     <Box height="100vh">
       <Box p="8px" display="flex" flexWrap="wrap">
         {['Lace', 'Light Fingering', 'Fingering', 'Sport', 'DK', 'Worsted', 'Aran', 'Bulky', 'Super Bulky'].map(
           weight => (
-            <Box mr="8px" mb="8px">
-              <SelectableChip key={weight} label={weight} onClick={handleWeightClick(weight as YarnWeight)} />
+            <Box key={weight} mr="8px" mb="8px">
+              <SelectableChip
+                selected={yarnWeight === weight}
+                key={weight}
+                label={weight}
+                onClick={handleWeightClick(weight as YarnWeight)}
+              />
             </Box>
           ),
         )}
@@ -117,6 +127,7 @@ export default function App() {
                     Gauge: {yarn.data.min_gauge}
                     {yarn.data.max_gauge ? `-${yarn.data.max_gauge}` : ''}
                   </Typography>
+                  <Typography>Ply: {yarn.data.yarn_weight.ply}</Typography>
                 </>
               }
             />

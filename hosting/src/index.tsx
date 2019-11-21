@@ -5,7 +5,7 @@ import './index.css';
 import { createMuiTheme } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
 
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Redirect, Route } from 'react-router-dom';
 
 const theme = createMuiTheme({
   palette: {
@@ -21,7 +21,8 @@ const theme = createMuiTheme({
 render(
   <ThemeProvider theme={theme}>
     <BrowserRouter>
-      <App />
+      <Route path="/:yarn" component={App} />
+      <Redirect from="/" to="/Lace" />
     </BrowserRouter>
   </ThemeProvider>,
   document.querySelector('#root'),

@@ -32,7 +32,7 @@ const rav = Ravelry.basic({
       });
 
       const res = await rav.yarns.search({
-        query: name
+        query: `"${name}"`
       });
 
       if (res.yarns.length > 0) {
