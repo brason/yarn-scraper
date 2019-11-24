@@ -3,7 +3,6 @@ import { Yarn } from '../types';
 
 export default async function garniusScraper(page: Page): Promise<Yarn[]> {
   await page.goto('https://www.garnius.no/garn/filter/cat/type');
-  await page.waitFor(5000);
   return await page.evaluate(() => {
     const elements = Array.from(
       document.querySelectorAll('.item'),
@@ -23,7 +22,6 @@ export default async function garniusScraper(page: Page): Promise<Yarn[]> {
             ?.textContent?.trim() as string,
         ),
         link: el.querySelector('a')?.getAttribute('href') as string,
-        length: elements.length,
       };
     });
   });

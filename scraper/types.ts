@@ -1,6 +1,6 @@
 export interface Yarn {
   name: string;
-  brand: string;
+  brand: string | null;
   price: number;
   link: string;
 }

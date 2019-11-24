@@ -1,7 +1,8 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import garnkosScraper from './scrapers/garnkosScraper';
-import garniusScraper from "./scrapers/garniusScraper";
+import garniusScraper from './scrapers/garniusScraper';
+import hoyScraper from './scrapers/hoyScraper';
 
 // const Ravelry = require('ravelry');
 //
@@ -38,9 +39,17 @@ import garniusScraper from "./scrapers/garniusScraper";
   });
   const page = await browser.newPage();
 
-  // const yarns = await garnkosScraper(page);
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
+  );
 
-  const yarns = await garniusScraper(page);
+  // const yarns = [];
+
+  // yarns.push(...(await garnkosScraper(page)));
+  // yarns.push(...(await garniusScraper(page)));
+
+  const yarns = await hoyScraper(page);
+
   console.log(yarns);
 
   await browser.close();
