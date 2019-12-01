@@ -3,6 +3,9 @@ import fs from 'fs';
 import garnkosScraper from './scrapers/garnkosScraper';
 import garniusScraper from './scrapers/garniusScraper';
 import hoyScraper from './scrapers/hoyScraper';
+import levenshtein from 'fast-levenshtein';
+import { Yarn } from './types';
+import { groupBy } from 'ramda';
 
 // const Ravelry = require('ravelry');
 //
@@ -33,6 +36,10 @@ import hoyScraper from './scrapers/hoyScraper';
 //   }
 // }
 
+// function addYarns(yarns: Yarn[]) {
+//
+// }
+
 (async () => {
   const browser = await puppeteer.launch({
     headless: true,
@@ -43,14 +50,20 @@ import hoyScraper from './scrapers/hoyScraper';
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
   );
 
-  // const yarns = [];
+  const groupByBrand = groupBy((yarn: Yarn) => yarn.name);
+  const yarns = JSON.parse(fs.readFileSync('./yarns.json', 'utf8'));
 
+  const test = groupByBrand(yarns);
+
+  console.log(test);
+
+  // const yarns = [];
+  //
   // yarns.push(...(await garnkosScraper(page)));
   // yarns.push(...(await garniusScraper(page)));
-
-  const yarns = await hoyScraper(page);
-
-  console.log(yarns);
+  // yarns.push(...(await hoyScraper(page)));
+  //
+  // fs.writeFileSync('./yarns.json', JSON.stringify(yarns));
 
   await browser.close();
 })();
