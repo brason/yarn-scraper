@@ -105,6 +105,13 @@ export default function App() {
           ),
         )}
       </Box>
+      <Box p="8px" display="flex" flexWrap="wrap">
+        {[1, 2, 3, 4, 5, 6, 7].map(size => (
+          <Box key={size} mr="8px" mb="8px">
+            <SelectableChip selected={false} key={size} label={`${size}mm`} onClick={() => {}} />
+          </Box>
+        ))}
+      </Box>
       <List>
         {yarns.map(yarn => (
           <ListItem key={yarn.link} onClick={handleYarnClick(yarn.link)} button>
