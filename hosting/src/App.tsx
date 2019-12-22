@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Box from '@material-ui/core/Box';
-import yarnsJson from 'yarns.json';
 import SelectableChip from './components/SelectableChip';
 import Typography from '@material-ui/core/Typography';
 import List from '@material-ui/core/List';
@@ -9,6 +8,10 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Avatar from '@material-ui/core/Avatar';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import { useHistory, useParams } from 'react-router';
+
+import firebase from 'firebase';
+import { useCollection } from 'react-firebase-hooks/firestore';
+
 
 type YarnWeight =
   | 'Lace'
@@ -79,6 +82,8 @@ export default function App() {
 
   const yarnWeight = params.yarn ? (decodeURIComponent(params.yarn) as YarnWeight) : 'Lace';
 
+  const [snapshot, loading, error] = useCollection(firebase.firestore().collection('yarns').where(''));
+
   const handleWeightClick = (weight: YarnWeight) => () => {
     history.push(`/${encodeURIComponent(weight)}`);
   };
@@ -86,8 +91,6 @@ export default function App() {
   const handleYarnClick = (link: string) => () => {
     window.location.assign(link);
   };
-
-  const yarns = yarnsJson[yarnWeight] as Yarn[];
 
   return (
     <Box height="100vh">
@@ -108,7 +111,7 @@ export default function App() {
       <Box p="8px" display="flex" flexWrap="wrap">
         {[1, 2, 3, 4, 5, 6, 7].map(size => (
           <Box key={size} mr="8px" mb="8px">
-            <SelectableChip selected={false} key={size} label={`${size}mm`} onClick={() => {}} />
+            <SelectableChip selected={false} key={size} label={`${size}mm`} onClick={() => { }} />
           </Box>
         ))}
       </Box>
