@@ -44,7 +44,9 @@ export interface YarnData {
     min_gauge?: number;
     max_gauge?: number;
   };
+  yarn_company_name: string;
   yarn_company: {
+    id: number;
     name: string;
   };
   photos?: {

@@ -13,13 +13,16 @@
   "dependencies": {
     "@types/fast-levenshtein": "0.0.1",
     "@types/firebase": "^3.2.1",
+    "@types/node-fetch": "^2.5.4",
     "@types/ramda": "^0.26.36",
     "@types/string-similarity": "^3.0.0",
     "fast-levenshtein": "^2.0.6",
     "firebase": "^7.6.1",
+    "node-fetch": "^2.6.0",
     "puppeteer": "^2.0.0",
     "ramda": "^0.26.1",
     "ravelry": "^0.3.3",
+    "request": "^2.88.0",
     "string-similarity": "^3.0.0"
   },
   "devDependencies": {

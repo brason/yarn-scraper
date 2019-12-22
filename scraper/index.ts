@@ -8,6 +8,7 @@ import { Yarn, YarnData } from './types';
 import { groupBy } from 'ramda';
 import firebase, { firestore } from 'firebase';
 import stringSimilarity from 'string-similarity';
+import fetch from 'node-fetch';
 
 firebase.initializeApp({
   apiKey: 'AIzaSyDur0kYc3v9FD4yVb5kKlnDH9IgRSGbNXQ',
@@ -19,29 +20,67 @@ firebase.initializeApp({
   appId: '1:1043913940689:web:745abe7f6b43fbd7946ff0',
 });
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const Ravelry = require('ravelry');
+const yarnCompanyNames = JSON.parse(`{
+  "Rauma Garn": "Rauma",
+  "Sandnes Garn": "Sandnes Garn",
+  "Du Store Alpakka": "Du Store Alpakka",
+  "Isager": "Isager Strik",
+  "Regia": "Regia",
+  "Järbo": "Järbo Garn",
+  "House of Yarn": "Järbo Garn",
+  "Dale Garn": "Dale Garn",
+  "Drops": "Garnstudio",
+  "Viking Garn": "Viking of Norway",
+  "Mayflower": "Mayflower",
+  "Novita": "Novita",
+  "Gjestal": "Gjestal",
+  "Gjestal Garn": "Gjestal",
+  "Knit At Home": "Knit at Home"
+}`);
 
-const rav = Ravelry.basic({
-  ravAccessKey: 'read-dec5be7996fb1304b396efdf2781dfc9',
-  ravPersonalKey: 'uSDs5Fn1XHG7VlS/KbYUN/va7iZJdtlsasfAEd1w',
-});
+function getBrands() {
+  // const brands = Array.from(new Set(yarns.map((yarn) => yarn.brand)));
+  //
+  // for (const brand of brands) {
+  //   const res = await ravelryApi('/yarn_companies/search.json', {
+  //     query: brand,
+  //   });
+  //
+  //   console.log(brand, res.yarn_companies);
+  // }
+}
 
 function trimName(name: string) {
   return name.replace(/(?:\dtråds\/)?\d+gr/gi, '').trim();
 }
 
-function findYarn(yarnResults: YarnData[], brand: string) {
-  if (yarnResults.length === 0) {
+function findYarnId(yarnResults: YarnData[], brand: string) {
+  if (yarnResults.length === 0 || !yarnCompanyNames[brand]) {
     return null;
   }
 
-  const bestMatch = stringSimilarity.findBestMatch(
-    brand,
-    yarnResults.map((yarn) => yarn.yarn_company?.name ?? ''),
-  );
+  return yarnResults.find(
+    (yarn) => yarn.yarn_company_name === yarnCompanyNames[brand],
+  )?.id;
+}
 
-  return yarnResults[bestMatch.bestMatchIndex];
+async function ravelryApi(
+  endpoint: string,
+  params?: { [key: string]: string },
+) {
+  const ravAccessKey = 'read-dec5be7996fb1304b396efdf2781dfc9';
+  const ravPersonalKey = 'uSDs5Fn1XHG7VlS/KbYUN/va7iZJdtlsasfAEd1w';
+
+  const qs = params ? `?${new URLSearchParams(params)}` : '';
+  const res = await fetch(`https://api.ravelry.com${endpoint}${qs}`, {
+    headers: {
+      Authorization: `Basic ${Buffer.from(
+        [ravAccessKey, ravPersonalKey].join(':'),
+      ).toString('base64')}`,
+    },
+  });
+
+  return res.json();
 }
 
 (async () => {
@@ -71,34 +110,49 @@ function findYarn(yarnResults: YarnData[], brand: string) {
   const existingYarnIds = yarnCollection.docs.map((doc) => Number(doc.id));
 
   for (const yarn of yarns) {
-    console.log(yarn.name);
-
     try {
-      const searchRes = (await rav.yarns.search({
-        query: trimName(yarn.name),
+      const query = `"${trimName(yarn.name)}"`;
+      const searchRes = (await ravelryApi('/yarns/search.json', {
+        query,
       })) as { yarns: YarnData[] };
 
-      const matchingYarn = findYarn(searchRes.yarns, yarn.brand);
+      const matchingYarnId = findYarnId(searchRes.yarns, yarn.brand);
 
-      if (matchingYarn) {
-        const yarnId = matchingYarn.id;
-
-        if (!existingYarnIds.includes(yarnId)) {
-          const { yarn: yarnData }: { yarn: YarnData } = await rav.yarns.show(
-            matchingYarn.id,
+      if (matchingYarnId) {
+        if (!existingYarnIds.includes(matchingYarnId)) {
+          const { yarn: yarnData }: { yarn: YarnData } = await ravelryApi(
+            `/yarns/${matchingYarnId}.json`,
           );
+
+          console.log(yarnData);
 
           await firestore()
             .doc(`yarns/${yarnData.id}`)
-            .set(yarnData);
+            .set({
+              grams: yarnData.grams,
+              minGauge: yarnData.min_gauge,
+              maxGauge: yarnData.max_gauge,
+              name: yarnData.name,
+              texture: yarnData.texture,
+              minNeedleSize: yarnData.min_needle_size?.metric,
+              maxNeedleSize: yarnData.max_needle_size?.metric,
+              yarnCompany: yarnData.yarn_company,
+              yarnWeight: {
+                name: yarnData.yarn_weight.name,
+                wpi: yarnData.yarn_weight.wpi,
+                ply: yarnData.yarn_weight.ply,
+              },
+            });
         }
 
-        await firestore()
-          .collection(`yarns/${yarnId}/items`)
-          .add({
-            link: yarn.link,
-            price: yarn.price,
-          });
+        // await firestore()
+        //   .collection(`yarns/${matchingYarnId}/items`)
+        //   .add({
+        //     link: yarn.link,
+        //     price: yarn.price,
+        //   });
+      } else {
+        console.log(query);
       }
     } catch (err) {
       console.log(yarn.name, yarn.brand, err);
