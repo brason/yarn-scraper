@@ -1,0 +1,104 @@
+[
+    {
+        "permalink": "garnstudio",
+        "url": "http://www.garnstudio.com/",
+        "alias": "Drops",
+        "name": "Garnstudio",
+        "id": 10430
+    },
+    {
+        "id": 1063,
+        "permalink": "isager-strik",
+        "url": "http://www.isagerstrik.dk/",
+        "alias": "Isager",
+        "name": "Isager Strik"
+    },
+    {
+        "permalink": "gjestal",
+        "url": "http://www.gjestal.no/",
+        "alias": "Gjestal Garn",
+        "name": "Gjestal",
+        "id": 111
+    },
+    {
+        "id": 113,
+        "permalink": "jarbo-garn",
+        "url": "http://www.jarbo.se/",
+        "alias": "Järbo",
+        "name": "Järbo Garn"
+    },
+    {
+        "permalink": "schachenmayr",
+        "url": "https://schachenmayr.com/",
+        "name": "Schachenmayr",
+        "id": 13098
+    },
+    {
+        "permalink": "schachenmayr-regia",
+        "url": "https://schachenmayr.com/en/our-collections/regia",
+        "name": "Schachenmayr Regia",
+        "id": 13336
+    },
+    {
+        "id": 1785,
+        "permalink": "dale-garn",
+        "url": "http://www.dalegarnnorthamerica.com",
+        "name": "Dale Garn"
+    },
+    {
+        "id": 17856,
+        "permalink": "knit-at-home",
+        "url": "http://knitathome.no",
+        "name": "Knit at Home"
+    },
+    {
+        "url": "https://dustorealpakka.no/",
+        "permalink": "du-store-alpakka",
+        "name": "Du Store Alpakka",
+        "id": 23139
+    },
+    {
+        "permalink": "novita",
+        "url": "https://www.novitaknits.com/en/en",
+        "name": "Novita",
+        "id": 324
+    },
+    {
+        "permalink": "rauma",
+        "url": "http://www.raumaull.no/raumaindex.htm",
+        "alias": "Rauma Garn",
+        "name": "Rauma",
+        "id": 327
+    },
+    {
+        "permalink": "viking-of-norway",
+        "url": "http://viking-garn.no/",
+        "alias": "Viking Garn",
+        "name": "Viking of Norway",
+        "id": 4115
+    },
+    {
+        "permalink": "mayflower",
+        "url": "http://www.mayflower.dk/",
+        "name": "Mayflower",
+        "id": 547
+    },
+    {
+        "permalink": "house-of-yarn",
+        "url": "https://www.hoy.no/",
+        "name": "House of Yarn",
+        "id": 6067
+    },
+    {
+        "id": 638,
+        "permalink": "sandnes-garn",
+        "url": "http://www.sandnesgarn.no/",
+        "name": "Sandnes Garn"
+    },
+    {
+        "id": 28,
+        "permalink": "lana-grossa",
+        "url": "https://www.lana-grossa.de/en/",
+        "name": "Lana Grossa"
+    }
+]

@@ -1,20 +1,42 @@
+export enum Brand {
+  DROPS = 10430,
+  VIKING_GARN = 4115,
+  DU_STORE_ALPAKKA = 23139,
+  DALE_GARN = 1785,
+  MAYFLOWER = 547,
+  GJESTAL_GARN = 111,
+  NOVITA = 324,
+  SANDNES_GARN = 638,
+  RAUMA_GARN = 327,
+  ISAGER_STRIK = 1063,
+  KNIT_AT_HOME = 17856,
+  HOUSE_OF_YARN = 6067,
+  LANA_GROSSA = 28,
+}
+
+export enum Store {
+  HOUSE_OF_YARN = "OOeEJ1ZBVEQZ3vQjHOrx",
+  GARNIUS = "Q3lhrF9lKa6pF415DX0W",
+  GARNKOS = "VNmFyMquD9UBfafrUS4q",
+}
+
 export interface Yarn {
   name: string;
-  brand: string;
+  brand: Brand | null;
   price: number;
-  link: string;
+  url: string;
 }
 
 type YarnWeight =
-  | 'Lace'
-  | 'Light Fingering'
-  | 'Fingering'
-  | 'Sport'
-  | 'DK'
-  | 'Worsted'
-  | 'Aran'
-  | 'Bulky'
-  | 'Super Bulky';
+  | "Lace"
+  | "Light Fingering"
+  | "Fingering"
+  | "Sport"
+  | "DK"
+  | "Worsted"
+  | "Aran"
+  | "Bulky"
+  | "Super Bulky";
 
 export interface YarnData {
   id: number;
