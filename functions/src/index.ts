@@ -6,7 +6,6 @@ import fetch from "node-fetch";
 import garnius from "./scrapers/garnius";
 import garnkos from "./scrapers/garnkos";
 import hoy from "./scrapers/hoy";
-import { findBestMatch } from "string-similarity";
 import { Store, Yarn } from "./types";
 
 admin.initializeApp();
@@ -46,102 +45,40 @@ function chunkArray(myArray: any[], chunk_size: number) {
   return tempArray;
 }
 
-export const updateYarns = functions.pubsub
-  .schedule("every day 00:00")
-  .timeZone("Europe/Oslo")
-  .onRun(async () => {
-    const browser = await puppeteer.launch();
-    const page = (await browser.pages())[0];
-
-    const brands = JSON.parse(fs.readFileSync("./brands.json", "utf8"));
-
-    await page.goto("https://www.ravelry.com/");
-
-    await page.evaluate(() => {
-      (document.querySelector("#user_login") as HTMLInputElement).value =
-        "brageni";
-      (document.querySelector("#user_password") as HTMLInputElement).value =
-        "u#H%Y!P5/iPb34M";
-      document.querySelector("button")?.click();
-    });
-
-    await page.waitForSelector("#navigation_avatar");
-
-    const yarnIds = [];
-
-    for (const brand of brands) {
-      let currentPage = 1;
-
-      while (true) {
-        const url = `https://www.ravelry.com/yarns/search#yarn-company-link=${brand.permalink}&sort=name&view=thumblist&page=${currentPage}`;
-        await page.goto(url);
-
-        const res = await page.waitForResponse((response) => {
-          const req = response.request();
-          return (
-            req.url() === "https://www.ravelry.com/yarns/search" &&
-            req.method() === "POST"
-          );
-        });
-
-        const ids = (await res.text())
-          .match(/clicked\(\d+\)/g)
-          ?.map((match) => match.slice(8, -1));
-
-        if (ids) {
-          yarnIds.push(...(ids as string[]));
-          currentPage += 1;
-        } else {
-          break;
-        }
-      }
-    }
-
-    const yarns = [];
-
-    for (const chunk of chunkArray(yarnIds, 20)) {
-      const ids = chunk.join("+");
-      const response = await ravelryApi(`/yarns.json?ids=${ids}`);
-      yarns.push(...Object.values(response.yarns));
-    }
-
-    await Promise.all(
-      yarns.map((yarn: any) => {
-        return db.doc(`yarns/${yarn.id}`).set(JSON.parse(JSON.stringify(yarn)));
-      })
-    );
-  });
-
 async function updatePrices(crawledYarns: Yarn[], store: Store) {
   const brands = [...new Set(crawledYarns.map((yarn) => yarn.brand))];
 
-  const allYarns = (
-    await Promise.all(
-      brands.map((brand) =>
-        db.collection("yarns").where("yarn_company.id", "==", brand).get()
-      )
-    )
-  )
-    .map((collection) => collection.docs.map((doc) => doc.data()))
-    .reduce((a, b) => a.concat(b), []);
+  const ravelryYarnsByBrand: { [key: number]: any[] } = {};
+
+  for (const brand of brands) {
+    const _yarns = await db
+      .collection("yarns")
+      .where("data.yarn_company.id", "==", brand)
+      .get();
+    ravelryYarnsByBrand[brand] = _yarns.docs.map((doc) => doc.data().data);
+  }
 
   const promises = [];
 
   for (const yarn of crawledYarns) {
-    const brandYarns = allYarns
-      .filter((_yarn) => _yarn.yarn_company.id === yarn.brand)
-      .map((yarn) => yarn.name) as string[];
+    const ravelryYarns = ravelryYarnsByBrand[yarn.brand];
 
-    if (brandYarns.length > 0) {
-      const bestMatch = findBestMatch(yarn.name, brandYarns).bestMatch.target;
+    const matchingYarn = ravelryYarns.find((_yarn) =>
+      _yarn.name.toLowerCase().includes(yarn.name.toLowerCase())
+    );
 
-      const yarnId = allYarns.find((yarn) => yarn.name === bestMatch)?.id;
-
+    if (matchingYarn) {
       promises.push(
-        db.doc(`yarns/${yarnId}/prices/${store}`).set({
+        db.doc(`yarns/${matchingYarn.id}/prices/${store}`).set({
           price: yarn.price,
           url: yarn.url,
           storeId: store,
+        })
+      );
+      promises.push(
+        db.doc(`yarns/${matchingYarn.id}`).update({
+          hasPrices: true,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         })
       );
     }
@@ -150,50 +87,121 @@ async function updatePrices(crawledYarns: Yarn[], store: Store) {
   await Promise.all(promises);
 }
 
+export async function _addYarns(): Promise<void> {
+  const browser = await puppeteer.launch();
+  const page = (await browser.pages())[0];
+
+  const brands = JSON.parse(fs.readFileSync("./src/brands.json", "utf8"));
+
+  await page.goto("https://www.ravelry.com/");
+
+  await page.evaluate(() => {
+    (document.querySelector("#user_login") as HTMLInputElement).value =
+      "brageni";
+    (document.querySelector("#user_password") as HTMLInputElement).value =
+      "u#H%Y!P5/iPb34M";
+    document.querySelector("button")?.click();
+  });
+
+  await page.waitForSelector("#navigation_avatar");
+
+  const yarnIds = [];
+
+  for (const brand of brands) {
+    let currentPage = 1;
+
+    while (true) {
+      const url = `https://www.ravelry.com/yarns/search#yarn-company-link=${brand.permalink}&sort=name&view=thumblist&page=${currentPage}`;
+      await page.goto(url);
+
+      const res = await page.waitForResponse((response) => {
+        const req = response.request();
+        return (
+          req.url() === "https://www.ravelry.com/yarns/search" &&
+          req.method() === "POST"
+        );
+      });
+
+      const ids = (await res.text())
+        .match(/clicked\(\d+\)/g)
+        ?.map((match) => match.slice(8, -1));
+
+      if (ids) {
+        yarnIds.push(...ids);
+        currentPage += 1;
+      } else {
+        break;
+      }
+    }
+  }
+
+  const yarns = [];
+
+  for (const chunk of chunkArray(yarnIds, 20)) {
+    const ids = chunk.join("+");
+    const response = await ravelryApi(`/yarns.json?ids=${ids}`);
+    yarns.push(...Object.values(response.yarns));
+  }
+
+  await Promise.all(
+    yarns.map((yarn: any) => {
+      return db.doc(`yarns/${yarn.id}`).set({
+        addedAt: admin.firestore.FieldValue.serverTimestamp(),
+        data: JSON.parse(JSON.stringify(yarn)),
+      });
+    })
+  );
+}
+
+export async function _garniusScraper(): Promise<void> {
+  const browser = await puppeteer.launch();
+  const page = (await browser.pages())[0];
+
+  const crawledYarns = await garnius(page);
+
+  await updatePrices(crawledYarns, Store.GARNIUS);
+
+  await browser.close();
+}
+
+export async function _garnkosScraper(): Promise<void> {
+  const browser = await puppeteer.launch();
+  const page = (await browser.pages())[0];
+
+  const crawledYarns = await garnkos(page);
+
+  await updatePrices(crawledYarns, Store.GARNKOS);
+
+  await browser.close();
+}
+
+export async function _hoyScraper(): Promise<void> {
+  const browser = await puppeteer.launch();
+  const page = (await browser.pages())[0];
+
+  const crawledYarns = await hoy(page);
+
+  await updatePrices(crawledYarns, Store.HOUSE_OF_YARN);
+
+  await browser.close();
+}
+
+export const addYarns = functions.pubsub
+  .schedule("every day 00:00")
+  .timeZone("Europe/Oslo")
+  .onRun(_addYarns);
+
 export const garniusScraper = functions.pubsub
   .schedule("every day 00:00")
   .timeZone("Europe/Oslo")
-  .onRun(async () => {
-    const browser = await puppeteer.launch();
-    const page = (await browser.pages())[0];
-
-    const crawledYarns = (await garnius(page)).filter(
-      (yarn) => yarn.brand !== null
-    );
-
-    await updatePrices(crawledYarns, Store.GARNIUS);
-
-    await browser.close();
-  });
+  .onRun(_garniusScraper);
 
 export const garnkosScraper = functions.pubsub
   .schedule("every day 00:00")
   .timeZone("Europe/Oslo")
-  .onRun(async () => {
-    const browser = await puppeteer.launch();
-    const page = (await browser.pages())[0];
-
-    const crawledYarns = (await garnkos(page)).filter(
-      (yarn) => yarn.brand !== null
-    );
-
-    await updatePrices(crawledYarns, Store.GARNKOS);
-
-    await browser.close();
-  });
+  .onRun(_garnkosScraper);
 
 export const hoyScraper = functions.pubsub
   .schedule("every day 00:00")
   .timeZone("Europe/Oslo")
-  .onRun(async () => {
-    const browser = await puppeteer.launch();
-    const page = (await browser.pages())[0];
-
-    const crawledYarns = (await hoy(page)).filter(
-      (yarn) => yarn.brand !== null
-    );
-
-    await updatePrices(crawledYarns, Store.HOUSE_OF_YARN);
-
-    await browser.close();
-  });
+  .onRun(_hoyScraper);

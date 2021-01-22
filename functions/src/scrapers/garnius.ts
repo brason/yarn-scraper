@@ -45,7 +45,7 @@ export default async function (page: puppeteer.Page): Promise<Yarn[]> {
 
   await autoScroll(page);
 
-  const yarns = await page.evaluate((brandMap) => {
+  const _yarnsRaw = await page.evaluate(() => {
     const elements = Array.from(document.querySelectorAll(".item"));
 
     return elements.map((el) => {
@@ -56,19 +56,31 @@ export default async function (page: puppeteer.Page): Promise<Yarn[]> {
         ?.textContent?.trim()
         ?.toLowerCase() as string;
 
-      return {
-        name,
-        brand: brandMap[brandName] ?? null,
-        price: parseInt(
-          [".special-price > .price", ".regular-price > .price"]
-            .map((s) => el.querySelector(s))
-            .find(Boolean)
-            ?.textContent?.trim() as string
-        ),
-        url: el.querySelector("a")?.getAttribute("href") as string,
-      };
+      const price = [".special-price > .price", ".regular-price > .price"]
+        .map((s) => el.querySelector(s))
+        .find(Boolean)
+        ?.textContent?.trim() as string;
+
+      const url = el.querySelector("a")?.getAttribute("href") as string;
+
+      return [name, brandName, price, url];
     });
-  }, brandMap);
+  });
+
+  const yarns = [];
+
+  for (const [name, brandName, price, url] of _yarnsRaw) {
+    const brand = brandMap[brandName];
+
+    if (brand) {
+      yarns.push({
+        name,
+        brand,
+        price: parseInt(price),
+        url,
+      });
+    }
+  }
 
   return yarns;
 }

@@ -20,28 +20,34 @@ export default async function (page: puppeteer.Page): Promise<Yarn[]> {
     "11602": Brand.LANA_GROSSA,
   };
 
-  for (const brandId of Object.keys(idToBrand)) {
+  for (const [brandId, brand] of Object.entries(idToBrand)) {
     await page.goto(
       `https://www.hoy.no/garn?___store=default&brand=${brandId}`
     );
-    const _yarns = await page.evaluate((brand) => {
+
+    const _yarnsRaw = await page.evaluate(() => {
       const elements = Array.from(document.querySelectorAll(".details"));
       return elements.map((el) => {
         const linkEl = el.querySelector(".link");
         const name = linkEl?.getAttribute("title") as string;
-        return {
-          name,
-          brand,
-          price: parseFloat(
-            el
-              .querySelector('[data-price-type="finalPrice"]')
-              ?.getAttribute("data-price-amount") as string
-          ),
-          url: linkEl?.getAttribute("href") as string,
-        };
+        const price = el
+          .querySelector('[data-price-type="finalPrice"]')
+          ?.getAttribute("data-price-amount") as string;
+
+        const url = linkEl?.getAttribute("href") as string;
+
+        return [name, price, url];
       });
-    }, idToBrand[brandId]);
-    yarns.push(..._yarns);
+    });
+
+    for (const [name, price, url] of _yarnsRaw) {
+      yarns.push({
+        name,
+        brand,
+        price: parseFloat(price),
+        url,
+      });
+    }
   }
 
   return yarns;

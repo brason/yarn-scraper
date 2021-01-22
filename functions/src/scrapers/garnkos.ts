@@ -1,11 +1,7 @@
 import * as puppeteer from "puppeteer";
 import { Yarn, Brand } from "../types";
 
-function parsePrice(text: string): number {
-  return parseInt(/kr\s(\d+,\d+)/g.exec(text)?.[1] as string);
-}
-
-export const brand = [
+export const brands = [
   Brand.DALE_GARN,
   Brand.DROPS,
   Brand.DU_STORE_ALPAKKA,
@@ -26,10 +22,11 @@ export const brandMap: { [key: string]: Brand } = {
 };
 
 export default async function (page: puppeteer.Page): Promise<Yarn[]> {
-  const yarns = [];
+  const yarnsRaw = [];
 
   for (const p of [1, 2, 3]) {
     await page.goto(`https://www.garnkos.no/garn.html?p=${p}`);
+
     const _yarns = await page.evaluate(() => {
       const elements = Array.from(document.querySelectorAll(".product-info"));
       return elements
@@ -37,28 +34,47 @@ export default async function (page: puppeteer.Page): Promise<Yarn[]> {
         .map((el) => {
           const name = el
             .querySelector(".product-name > a")
-            ?.getAttribute("title") as string;
+            ?.getAttribute("title")
+            ?.trim() as string;
 
           const brandName = el
             .querySelector(".product-brand")
-            ?.textContent?.trim()
-            ?.toLowerCase() as string;
+            ?.textContent?.trim() as string;
 
-          return {
-            name,
-            brand: brandMap[brandName] ?? null,
-            price: parsePrice(
-              [".special-price > .price", ".regular-price > .price"]
-                .map((s) => el.querySelector(s))
-                .find(Boolean)
-                ?.textContent?.trim() as string
-            ),
-            url: el.querySelector("a")?.getAttribute("href") as string,
-          };
+          const specialPrice = el
+            .querySelector(".special-price > .price")
+            ?.textContent?.trim();
+          const regularPrice = el
+            .querySelector(".regular-price > .price")
+            ?.textContent?.trim();
+
+          const price = specialPrice ?? regularPrice;
+
+          const url = el.querySelector("a")?.getAttribute("href") as string;
+
+          return [name, brandName, price as string, url];
         });
-    }, brandMap);
+    });
 
-    yarns.push(..._yarns);
+    yarnsRaw.push(..._yarns);
   }
+
+  const yarns = [];
+
+  for (const [name, brandName, price, url] of yarnsRaw) {
+    if (!name.match(/\d+/)) {
+      const brand = brandMap[brandName.toLowerCase()];
+
+      if (brand) {
+        yarns.push({
+          name,
+          brand,
+          price: parseInt(/kr\s(\d+)/g.exec(price)?.[1] as string),
+          url,
+        });
+      }
+    }
+  }
+
   return yarns;
 }

@@ -22,7 +22,7 @@ export enum Store {
 
 export interface Yarn {
   name: string;
-  brand: Brand | null;
+  brand: Brand;
   price: number;
   url: string;
 }

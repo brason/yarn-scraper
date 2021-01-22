@@ -10,13 +10,13 @@ import { BrowserRouter, Redirect, Route } from 'react-router-dom';
 import app from 'firebase/app';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDur0kYc3v9FD4yVb5kKlnDH9IgRSGbNXQ",
-  authDomain: "yarn-for-more.firebaseapp.com",
-  databaseURL: "https://yarn-for-more.firebaseio.com",
-  projectId: "yarn-for-more",
-  storageBucket: "yarn-for-more.appspot.com",
-  messagingSenderId: "1043913940689",
-  appId: "1:1043913940689:web:745abe7f6b43fbd7946ff0"
+  apiKey: 'AIzaSyDur0kYc3v9FD4yVb5kKlnDH9IgRSGbNXQ',
+  authDomain: 'yarn-for-more.firebaseapp.com',
+  databaseURL: 'https://yarn-for-more.firebaseio.com',
+  projectId: 'yarn-for-more',
+  storageBucket: 'yarn-for-more.appspot.com',
+  messagingSenderId: '1043913940689',
+  appId: '1:1043913940689:web:745abe7f6b43fbd7946ff0',
 };
 
 app.initializeApp(firebaseConfig);
